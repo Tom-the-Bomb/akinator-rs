@@ -13,8 +13,8 @@ use reqwest::{
 };
 use serde_json::Value;
 
-mod models;
-mod enums;
+pub mod models;
+pub mod enums;
 
 lazy_static! {
     static ref HEADERS: HeaderMap<HeaderValue> = {
@@ -42,7 +42,7 @@ lazy_static! {
 #[derive(Debug, Clone)]
 pub struct Akinator {
     pub language: String,
-    pub theme: char,
+    pub theme: enums::Theme,
     pub child_mode: bool,
 
     http_client: Client,
@@ -67,7 +67,7 @@ impl Akinator {
     pub fn new() -> Self {
         Self {
             language: "en".to_string(),
-            theme: 'c',
+            theme: enums::Theme::Characters,
             child_mode: false,
 
             http_client: Client::new(),
@@ -89,11 +89,7 @@ impl Akinator {
         }
     }
 
-    pub fn theme(mut self, mut theme: char) -> Self {
-        if !['c', 'a', 'o'].contains(&theme) {
-            theme = 'c';
-        }
-
+    pub fn theme(mut self, theme: enums::Theme) -> Self {
         self.theme = theme;
         self
     }
@@ -110,7 +106,7 @@ impl Akinator {
 
     fn find_server(&self) -> Result<String, Box<dyn Error>> {
         let data_regex = RegexBuilder::new(
-            r#"\[{"translated_theme_name":".*","urlWs":"https:\\/\\/srv[0-9]+\.akinator\.com:[0-9]+\\/ws","subject_id":"[0-9]+"}\]"#
+            r#"\[\{"translated_theme_name":".*","urlWs":"https:\\/\\/srv[0-9]+\.akinator\.com:[0-9]+\\/ws","subject_id":"[0-9]+"\}\]"#
         )
             .case_insensitive(true)
             .multi_line(true)
@@ -118,19 +114,15 @@ impl Akinator {
 
         let html = self.http_client.get(&self.uri).send()?.text()?;
 
-        let id = match self.theme {
-            'c' => "1",
-            'a' => "14",
-            'o' => "2",
-            _ => "1",
-        };
+        let id = (self.theme.clone() as usize)
+            .to_string();
 
         if let Some(mat) = data_regex.find(html.as_str()) {
             match serde_json::from_str(mat.as_str())? {
                 Value::Array(arr) => {
                     let mat = arr
                         .iter()
-                        .filter(|entry| entry["subject_id"].as_str() == Some(id))
+                        .filter(|entry| entry["subject_id"].as_str() == Some(id.as_str()))
                         .collect::<Vec<_>>()[0];
 
                     return Ok(mat["urlWs"].to_string());
