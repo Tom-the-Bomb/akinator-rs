@@ -1,3 +1,4 @@
+use std::str::FromStr;
 
 #[derive(Debug)]
 pub enum Answer {
@@ -23,6 +24,14 @@ fn try_answer_from_string(ans: String) -> Result<Answer, &'static str> {
         "probably" | "p" | "3" => Ok(Answer::Probably),
         "probably not" | "pn" | "4" => Ok(Answer::ProbablyNot),
         _ => Err("Invalid answer"),
+    }
+}
+
+impl FromStr for Answer {
+    type Err = &'static str;
+
+    fn from_str(string: &str) -> Result<Self, Self::Err> {
+        try_answer_from_string(string.to_string())
     }
 }
 
@@ -57,6 +66,14 @@ fn try_theme_from_string(theme: String) -> Theme {
         "a" | "animals" => Theme::Animals,
         "o" | "objects" => Theme::Objects,
         _ => Theme::Characters,
+    }
+}
+
+impl FromStr for Theme {
+    type Err = &'static str;
+
+    fn from_str(string: &str) -> Result<Self, Self::Err> {
+        Ok(try_theme_from_string(string.to_string()))
     }
 }
 

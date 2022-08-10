@@ -8,10 +8,9 @@ use regex::RegexBuilder;
 use reqwest::{
     blocking::Client,
     header::{
-        HeaderMap, HeaderName, HeaderValue, ACCEPT, ACCEPT_ENCODING, ACCEPT_LANGUAGE, USER_AGENT,
+        HeaderMap, HeaderName, HeaderValue, USER_AGENT,
     },
 };
-use serde_json::Value;
 
 pub mod models;
 pub mod enums;
@@ -19,13 +18,7 @@ pub mod enums;
 lazy_static! {
     static ref HEADERS: HeaderMap<HeaderValue> = {
         let mut headers = HeaderMap::new();
-        headers.insert(
-            ACCEPT,
-            "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8"
-                .parse().unwrap(),
-        );
-        headers.insert(ACCEPT_ENCODING, "gzip, deflate".parse().unwrap());
-        headers.insert(ACCEPT_LANGUAGE, "en-US,en;q=0.9".parse().unwrap());
+
         headers.insert(
             USER_AGENT,
             "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) snap Chromium/81.0.4044.92 Chrome/81.0.4044.92 Safari/537.36"
@@ -112,23 +105,23 @@ impl Akinator {
             .multi_line(true)
             .build()?;
 
-        let html = self.http_client.get(&self.uri).send()?.text()?;
+        let html = self.http_client.get(&self.uri)
+            .send()?
+            .text()?;
 
         let id = (self.theme.clone() as usize)
             .to_string();
 
         if let Some(mat) = data_regex.find(html.as_str()) {
-            match serde_json::from_str(mat.as_str())? {
-                Value::Array(arr) => {
-                    let mat = arr
-                        .iter()
-                        .filter(|entry| entry["subject_id"].as_str() == Some(id.as_str()))
-                        .collect::<Vec<_>>()[0];
+            let json: Vec<models::ServerData> =
+                serde_json::from_str(mat.as_str())?;
 
-                    return Ok(mat["urlWs"].to_string());
-                }
-                _ => return Err("Expected array from parsed json".into()),
-            }
+            let mat = json
+                .iter()
+                .filter(|entry| entry.subject_id == id)
+                .collect::<Vec<_>>()[0];
+
+            return Ok(mat.urlWs.clone());
         }
 
         Err("Could not find the server uri".into())
@@ -148,7 +141,7 @@ impl Akinator {
             .text()?;
 
         if let Some(mat) = vars_regex.captures(html.as_str()) {
-            return Ok((mat[0].to_string(), mat[1].to_string()));
+            return Ok((mat[1].to_string(), mat[2].to_string()));
         }
 
         Err("Could not found the session info".into())
@@ -230,7 +223,7 @@ impl Akinator {
         self.question_filter = Some(
             match self.child_mode {
                 true => "cat%3D1",
-                false => ",",
+                false => "",
             }
             .to_string(),
         );
@@ -258,10 +251,10 @@ impl Akinator {
             .get(format!("{}/new_session", &self.uri))
             .headers(HEADERS.clone())
             .form(&params)
-            .send()?
-            .text()?;
+            .send()?;
 
-        let json_string = self.parse_response(response)?;
+        println!("{:#?}", params);
+        let json_string = self.parse_response(response.text()?)?;
         let json: models::StartJson =
             serde_json::from_str(json_string.as_str())?;
 

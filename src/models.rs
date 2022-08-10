@@ -51,6 +51,14 @@ pub struct WinJson {
 }
 
 
+#[derive(Serialize, Deserialize)]
+#[allow(non_snake_case)]
+pub struct ServerData {
+    pub urlWs: String,
+    pub subject_id: String,
+}
+
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Guess {
     pub id: String,
