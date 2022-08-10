@@ -1,6 +1,7 @@
 use std::str::FromStr;
+use crate::error::{Result, Error};
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum Answer {
     Yes = 0,
     No = 1,
@@ -16,19 +17,19 @@ pub enum Theme {
     Objects = 2,
 }
 
-fn try_answer_from_string(ans: String) -> Result<Answer, &'static str> {
-    match ans.to_ascii_lowercase().as_str() {
+fn try_answer_from_string(ans: String) -> Result<Answer> {
+    match ans.to_lowercase().as_str() {
         "yes" | "y" | "0" => Ok(Answer::Yes),
         "no"  | "n" | "1" => Ok(Answer::No),
         "i dont know" | "i don't know" | "idk" | "i" | "2" => Ok(Answer::Idk),
         "probably" | "p" | "3" => Ok(Answer::Probably),
         "probably not" | "pn" | "4" => Ok(Answer::ProbablyNot),
-        _ => Err("Invalid answer"),
+        _ => Err(Error::InvalidAnswer),
     }
 }
 
 impl FromStr for Answer {
-    type Err = &'static str;
+    type Err = Error;
 
     fn from_str(string: &str) -> Result<Self, Self::Err> {
         try_answer_from_string(string.to_string())
@@ -36,7 +37,7 @@ impl FromStr for Answer {
 }
 
 impl TryFrom<&str> for Answer {
-    type Error = &'static str;
+    type Error = Error;
 
     fn try_from(ans: &str) -> Result<Self, Self::Error> {
         try_answer_from_string(ans.to_string())
@@ -45,7 +46,7 @@ impl TryFrom<&str> for Answer {
 
 
 impl TryFrom<String> for Answer {
-    type Error = &'static str;
+    type Error = Error;
 
     fn try_from(ans: String) -> Result<Self, Self::Error> {
         try_answer_from_string(ans)
@@ -53,7 +54,7 @@ impl TryFrom<String> for Answer {
 }
 
 impl TryFrom<usize> for Answer {
-    type Error = &'static str;
+    type Error = Error;
 
     fn try_from(ans: usize) -> Result<Self, Self::Error> {
         try_answer_from_string(ans.to_string())
@@ -62,7 +63,7 @@ impl TryFrom<usize> for Answer {
 
 
 fn try_theme_from_string(theme: String) -> Theme {
-    match theme.to_ascii_lowercase().as_str() {
+    match theme.to_lowercase().as_str() {
         "a" | "animals" => Theme::Animals,
         "o" | "objects" => Theme::Objects,
         _ => Theme::Characters,
@@ -70,7 +71,7 @@ fn try_theme_from_string(theme: String) -> Theme {
 }
 
 impl FromStr for Theme {
-    type Err = &'static str;
+    type Err = Error;
 
     fn from_str(string: &str) -> Result<Self, Self::Err> {
         Ok(try_theme_from_string(string.to_string()))

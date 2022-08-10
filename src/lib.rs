@@ -1,6 +1,5 @@
 //! A simple wrapper crate around the Akinator API
 
-use std::error::Error;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use lazy_static::lazy_static;
@@ -11,8 +10,14 @@ use reqwest::{
         HeaderMap, HeaderName, HeaderValue, USER_AGENT,
     },
 };
+use crate::error::{
+    Result,
+    Error,
+    UpdateInfoError,
+};
 
 pub mod models;
+pub mod error;
 pub mod enums;
 
 lazy_static! {
@@ -21,42 +26,69 @@ lazy_static! {
 
         headers.insert(
             USER_AGENT,
-            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) snap Chromium/81.0.4044.92 Chrome/81.0.4044.92 Safari/537.36"
-                .parse().unwrap(),
+            HeaderValue::from_static(
+                "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) snap Chromium/81.0.4044.92 Chrome/81.0.4044.92 Safari/537.36"
+            ),
         );
         headers.insert(
             HeaderName::from_static("x-requested-with"),
-            "XMLHttpRequest".parse().unwrap(),
+            HeaderValue::from_static(
+                "XMLHttpRequest"
+            ),
         );
         headers
     };
 }
 
+
+/// Represents an akinator game
 #[derive(Debug, Clone)]
 pub struct Akinator {
+    /// The language for the akinator session
     pub language: String,
+    /// The theme for the akinator session
+    /// One of 'Characters', 'Animals', or 'Objects'
     pub theme: enums::Theme,
+    /// indicates whether or not to filter out NSFW questions and content
     pub child_mode: bool,
 
+    /// The reqwest client used for this akinator session
     http_client: Client,
-    timestamp: f32,
+    /// The timestamp the game session was started
+    /// used for keeping track of sessions
+    timestamp: u64,
+    /// the base URI to use when making requests
+    /// usually: https://{language}.akinator.com
     uri: String,
+    /// The unique identifier for the akinator session
     uid: Option<String>,
+    /// the websocket url used for the game
     ws_url: Option<String>,
     session: Option<usize>,
     frontaddr: Option<String>,
     signature: Option<usize>,
     question_filter: Option<String>,
 
+    /// returns the current question to answer
     pub current_question: Option<String>,
+    /// returns the progress of the akinator
+    /// a float out of 100.0
     pub progression: f32,
+    /// returns the a counter of questions asked and answered
+    /// starts at 0
     pub step: usize,
 
+    /// returns the akinator's best guess
+    /// Only will be set when [`Self::win`] has been called
     pub first_guess: Option<models::Guess>,
+    /// a vec containing all the possible guesses by the akinator
+    /// Only will be set when [`Self::win`] has been called
     pub guesses: Vec<models::Guess>,
 }
 
 impl Akinator {
+    /// Creates a new [`Akinator`] instance
+    /// with fields filled with default values
     pub fn new() -> Self {
         Self {
             language: "en".to_string(),
@@ -64,7 +96,7 @@ impl Akinator {
             child_mode: false,
 
             http_client: Client::new(),
-            timestamp: 0.0,
+            timestamp: 0,
             uri: "https://en.akinator.com".to_string(),
             uid: None,
             ws_url: None,
@@ -82,22 +114,37 @@ impl Akinator {
         }
     }
 
+    /// builder method to set the [`Self.theme`] for the akinator game
     pub fn theme(mut self, theme: enums::Theme) -> Self {
         self.theme = theme;
         self
     }
 
+    /// builder method to set the [`Self.language`] for the akinator game
     pub fn language(mut self, language: String) -> Self {
         self.language = language;
         self
     }
 
+    /// builder function to turn on [`Self.child_mode`]
     pub fn with_child_mode(mut self) -> Self {
         self.child_mode = true;
         self
     }
 
-    fn find_server(&self) -> Result<String, Box<dyn Error>> {
+    /// Handles an error response from the akinator API
+    fn handle_error_response(&self, completion: String) -> Error {
+        match completion.to_uppercase().as_str() {
+            "KO - SERVER DOWN" => Error::ServersDown,
+            "KO - TECHNICAL ERROR" =>Error::TechnicalError,
+            "KO - TIMEOUT" => Error::TimeoutError,
+            "KO - ELEM LIST IS EMPTY" | "WARN - NO QUESTION" => Error::NoMoreQuestions,
+            _ => Error::ConnectionError,
+        }
+    }
+
+    /// internal method used to parse and find the `ws_url` for this game
+    fn find_server(&self) -> Result<String> {
         let data_regex = RegexBuilder::new(
             r#"\[\{"translated_theme_name":".*","urlWs":"https:\\/\\/srv[0-9]+\.akinator\.com:[0-9]+\\/ws","subject_id":"[0-9]+"\}\]"#
         )
@@ -124,10 +171,12 @@ impl Akinator {
             return Ok(mat.urlWs.clone());
         }
 
-        Err("Could not find the server uri".into())
+        Err(Error::NoDataFound)
     }
 
-    fn find_session_info(&self) -> Result<(String, String), Box<dyn Error>> {
+    /// internal method used to parse and find the session UID and frontaddr for the akinator session
+    /// Done by parsing the javascript of the site, extracting variable values
+    fn find_session_info(&self) -> Result<(String, String)> {
         let vars_regex =
             RegexBuilder::new(r#"var uid_ext_session = '(.*)';\n.*var frontaddr = '(.*)';"#)
                 .case_insensitive(true)
@@ -144,22 +193,26 @@ impl Akinator {
             return Ok((mat[1].to_string(), mat[2].to_string()));
         }
 
-        Err("Could not found the session info".into())
+        Err(Error::NoDataFound)
     }
 
-    fn parse_response(&self, html: String) -> Result<String, Box<dyn Error>> {
-        let mut splits = html.split("(").collect::<Vec<_>>();
+    /// internal method used to parse the response returned from the API
+    /// strips the function call wrapped around the json, returning the json string
+    fn parse_response(&self, html: String) -> Result<String> {
+        let response_regex = RegexBuilder::new(r"jQuery\d+_\d+\((\{.+\})\)")
+            .case_insensitive(true)
+            .multi_line(true)
+            .build()?;
 
-        splits.remove(0);
+        if let Some(mat) = response_regex.captures(html.as_str()) {
+            return Ok(mat[1].to_string());
+        }
 
-        let json_string = splits.join(",")
-            .trim_end_matches(')')
-            .to_string();
-
-        Ok(json_string)
+        Err(Error::ParseResponseError)
     }
 
-    fn update_move_info(&mut self, json: models::MoveJson) -> Result<(), Box<dyn Error>> {
+    /// updates the [`Akinator`] fields after each response
+    fn update_move_info(&mut self, json: models::MoveJson) -> Result<(), UpdateInfoError> {
         let params = json.parameters;
 
         self.current_question = Some(
@@ -175,7 +228,8 @@ impl Akinator {
         Ok(())
     }
 
-    fn update_start_info(&mut self, json: models::StartJson) -> Result<(), Box<dyn Error>> {
+    /// similar to [`Self::update_move_info`], but only called once when [`Self::start`] is called
+    fn update_start_info(&mut self, json: models::StartJson) -> Result<(), UpdateInfoError> {
         let ident = json.parameters.identification;
         let step_info = json.parameters.step_information;
 
@@ -202,7 +256,8 @@ impl Akinator {
         Ok(())
     }
 
-    pub fn start(&mut self) -> Result<(), Box<dyn Error>> {
+    /// Starts the akinator game
+    pub fn start(&mut self) -> Result<()> {
         self.ws_url = Some(self.find_server()?);
         self.uri = format!("https://{}.akinator.com", self.language);
 
@@ -212,7 +267,7 @@ impl Akinator {
 
         self.timestamp = SystemTime::now()
             .duration_since(UNIX_EPOCH)?
-            .as_secs_f32();
+            .as_secs();
 
         let soft_constraint = match self.child_mode {
             true => "ETAT%3D%27EN%27",
@@ -250,10 +305,9 @@ impl Akinator {
         let response = self.http_client
             .get(format!("{}/new_session", &self.uri))
             .headers(HEADERS.clone())
-            .form(&params)
+            .query(&params)
             .send()?;
 
-        println!("{:#?}", params);
         let json_string = self.parse_response(response.text()?)?;
         let json: models::StartJson =
             serde_json::from_str(json_string.as_str())?;
@@ -264,10 +318,11 @@ impl Akinator {
             return Ok(());
         }
 
-        Err("Could not connect to Akinator servers".into())
+        Err(self.handle_error_response(json.completion))
     }
 
-    pub fn answer(&mut self, answer: enums::Answer) -> Result<&Option<String>, Box<dyn Error>> {
+    /// answers the akinator's current question which can be retrieved with [`Self.current_question`]
+    pub fn answer(&mut self, answer: enums::Answer) -> Result<&Option<String>> {
         let params = [
             (
                 "callback",
@@ -289,7 +344,7 @@ impl Akinator {
         let response = self.http_client
             .get(format!("{}/answer_api", &self.uri))
             .headers(HEADERS.clone())
-            .form(&params)
+            .query(&params)
             .send()?
             .text()?;
 
@@ -302,10 +357,12 @@ impl Akinator {
             return Ok(&self.current_question);
         }
 
-        Err("Could not connect to Akinator servers".into())
+        Err(self.handle_error_response(json.completion))
     }
 
-    pub fn win(&mut self) -> Result<&Option<models::Guess>, Box<dyn Error>> {
+    /// tells the akinator to end the game and make it's guess
+    /// returns its best guess
+    pub fn win(&mut self) -> Result<&Option<models::Guess>> {
         let params = [
             (
                 "callback",
@@ -320,7 +377,7 @@ impl Akinator {
         let response = self.http_client
             .get(format!("{}/list", self.ws_url.as_ref().unwrap()))
             .headers(HEADERS.clone())
-            .form(&params)
+            .query(&params)
             .send()?
             .text()?;
 
@@ -343,13 +400,14 @@ impl Akinator {
             return Ok(&self.first_guess);
         }
 
-        Err("Could not connect to Akinator servers".into())
+        Err(self.handle_error_response(json.completion))
     }
 
-    pub fn back(&mut self) -> Result<(), Box<dyn Error>> {
+    /// Goes back a question
+    pub fn back(&mut self) -> Result<()> {
 
         if self.step == 0 {
-            return Err("Cannot go back any further".into())
+            return Err(Error::CantGoBackAnyFurther)
         }
 
         let params = [
@@ -371,7 +429,7 @@ impl Akinator {
         let response = self.http_client
             .get(format!("{}/cancel_answer", self.ws_url.as_ref().unwrap()))
             .headers(HEADERS.clone())
-            .form(&params)
+            .query(&params)
             .send()?
             .text()?;
 
@@ -385,6 +443,6 @@ impl Akinator {
             return Ok(());
         }
 
-        Err("Could not connect to Akinator servers".into())
+        Err(self.handle_error_response(json.completion))
     }
 }
