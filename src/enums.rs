@@ -18,7 +18,7 @@ pub enum Theme {
 }
 
 fn try_answer_from_string(ans: String) -> Result<Answer> {
-    match ans.to_lowercase().as_str() {
+    match ans.trim().to_lowercase().as_str() {
         "yes" | "y" | "0" => Ok(Answer::Yes),
         "no"  | "n" | "1" => Ok(Answer::No),
         "i dont know" | "i don't know" | "idk" | "i" | "2" => Ok(Answer::Idk),
@@ -62,8 +62,8 @@ impl TryFrom<usize> for Answer {
 }
 
 
-fn try_theme_from_string(theme: String) -> Theme {
-    match theme.to_lowercase().as_str() {
+fn theme_from_string(theme: String) -> Theme {
+    match theme.trim().to_lowercase().as_str() {
         "a" | "animals" => Theme::Animals,
         "o" | "objects" => Theme::Objects,
         _ => Theme::Characters,
@@ -74,24 +74,24 @@ impl FromStr for Theme {
     type Err = Error;
 
     fn from_str(string: &str) -> Result<Self, Self::Err> {
-        Ok(try_theme_from_string(string.to_string()))
+        Ok(theme_from_string(string.to_string()))
     }
 }
 
 impl From<&str> for Theme {
     fn from(theme: &str) -> Self {
-        try_theme_from_string(theme.to_string())
+        theme_from_string(theme.to_string())
     }
 }
 
 impl From<String> for Theme {
     fn from(theme: String) -> Self {
-        try_theme_from_string(theme)
+        theme_from_string(theme)
     }
 }
 
 impl From<usize> for Theme {
     fn from(theme: usize) -> Self {
-        try_theme_from_string(theme.to_string())
+        theme_from_string(theme.to_string())
     }
 }

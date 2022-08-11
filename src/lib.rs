@@ -404,9 +404,8 @@ impl Akinator {
 
     /// Goes back a question
     pub fn back(&mut self) -> Result<Option<String>> {
-
         if self.step == 0 {
-            return Err(Error::CantGoBackAnyFurther)
+            return Err(Error::CantGoBackAnyFurther);
         }
 
         let params = [
