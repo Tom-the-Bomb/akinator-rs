@@ -17,6 +17,26 @@ pub enum Theme {
     Objects = 2,
 }
 
+#[derive(Clone, Debug)]
+pub enum Language {
+    English,
+    Arabic,
+    Chinese,
+    German,
+    Spanish,
+    French,
+    Hebrew,
+    Italian,
+    Japanese,
+    Korean,
+    Dutch,
+    Polish,
+    Portugese,
+    Russian,
+    Turkish,
+    Indonesian,
+}
+
 fn try_answer_from_string(ans: String) -> Result<Answer> {
     match ans.trim().to_lowercase().as_str() {
         "yes" | "y" | "0" => Ok(Answer::Yes),
@@ -93,5 +113,76 @@ impl From<String> for Theme {
 impl From<usize> for Theme {
     fn from(theme: usize) -> Self {
         theme_from_string(theme.to_string())
+    }
+}
+
+
+impl ToString for Language {
+    fn to_string(&self) -> String {
+        match self {
+            Self::English => "en",
+            Self::Arabic => "ar",
+            Self::Chinese => "cn",
+            Self::German => "de",
+            Self::Spanish => "es",
+            Self::French => "fr",
+            Self::Hebrew => "il",
+            Self::Italian => "it",
+            Self::Japanese => "jp",
+            Self::Korean => "kr",
+            Self::Dutch => "nl",
+            Self::Polish => "pl",
+            Self::Portugese => "pt",
+            Self::Russian => "ru",
+            Self::Turkish => "tr",
+            Self::Indonesian => "id",
+        }
+        .to_string()
+    }
+}
+
+fn try_lang_from_string(lang: String) -> Result<Language> {
+    match lang.trim().to_lowercase().as_str() {
+        "english" | "en" => Ok(Language::English),
+        "arabic"  | "ar" => Ok(Language::Arabic),
+        "chinese" | "cn" => Ok(Language::Chinese),
+        "spanish" | "es" => Ok(Language::Spanish),
+        "french"  | "fr" => Ok(Language::French),
+        "hebrew"  | "il" => Ok(Language::Hebrew),
+        "italian" | "it" => Ok(Language::Italian),
+        "japanese" | "jp" => Ok(Language::Japanese),
+        "korean"  | "kr" => Ok(Language::Korean),
+        "dutch"  | "nl" => Ok(Language::Dutch),
+        "polish" | "pl" => Ok(Language::Polish),
+        "portugese" | "pt" => Ok(Language:: Portugese),
+        "russian" | "ru" => Ok(Language::Russian),
+        "turkish" | "tr" => Ok(Language::Turkish),
+        "indonesian" | "id" => Ok(Language::Indonesian),
+        _ => Err(Error::InvalidLanguage)
+    }
+}
+
+impl FromStr for Language {
+    type Err = Error;
+
+    fn from_str(string: &str) -> Result<Self, Self::Err> {
+        try_lang_from_string(string.to_string())
+    }
+}
+
+impl TryFrom<&str> for Language {
+    type Error = Error;
+
+    fn try_from(ans: &str) -> Result<Self, Self::Error> {
+        try_lang_from_string(ans.to_string())
+    }
+}
+
+
+impl TryFrom<String> for Language {
+    type Error = Error;
+
+    fn try_from(ans: String) -> Result<Self, Self::Error> {
+        try_lang_from_string(ans)
     }
 }

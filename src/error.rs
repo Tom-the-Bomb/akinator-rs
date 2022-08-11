@@ -60,6 +60,9 @@ pub enum Error {
 
     #[error("Invalid Answer")]
     InvalidAnswer,
+
+    #[error("Invalid Language")]
+    InvalidLanguage,
 }
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;

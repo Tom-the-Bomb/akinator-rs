@@ -1,51 +1,79 @@
 #[cfg(test)]
 mod tests {
-    use std::io::stdin;
     use akinator_rs::Akinator;
     use akinator_rs::enums::Answer;
-    use akinator_rs::error::Result;
+    use akinator_rs::error::{Result, Error};
 
-    #[test]
-    fn test_akinator() -> Result<()> {
-        let mut akinator = Akinator::new();
-        akinator.start()?;
+    #[tokio::test]
+    async fn test_akinator() -> Result<()> {
+        // create a new akinator instance
+        let mut akinator = Akinator::new()
+            .with_child_mode(); // set child mode to true
 
+        // start the akinator game
+        akinator.start().await?;
+
+        // print out our first question
         println!("{}",
             akinator.current_question.clone()
                 .unwrap_or_else(|| "no question".to_string())
         );
 
+        // while the progression of the akinator is less than 80,
+        // we keep requesting for questions and answering them.
         while akinator.progression <= 80.0 {
+            // the string buffer to store the console input
             let mut answer = String::new();
-            stdin().read_line(&mut answer).unwrap();
+
+            // reads answer from standard (console) input
+            std::io::stdin()
+                .read_line(&mut answer)
+                .expect("Failed to read input from console");
 
             match answer.as_str() {
+                // if user response is "back"
                 "back" => {
-                    if let Ok(q) = akinator.back() {
-                        println!("{}",
-                            q.unwrap_or_else(|| "no question".to_string())
-                        );
-                    } else {
-                        println!("Cannot go back anymore!");
+                    // we go back one question with `Akinator::back`
+                    match akinator.back().await {
+                        // Ok Result from `back`: we print out the next question
+                        Ok(question) => println!("{}",
+                            question.unwrap_or_else(|| "no question".to_string())
+                        ),
+                        // Can't go back any further, we are already on the first question most likely
+                        Err(Error::CantGoBackAnyFurther) => println!("Cannot go back anymore!"),
+                        // Something else went wrong
+                        Err(_) => println!("Something else went wrong.")
                     }
                 },
+                // Any other response from the user
                 other => {
+                    // Valid answer from user
                     if let Ok(ans) = other.parse::<Answer>() {
-                        let question = akinator.answer(ans)?;
+                        // answers the akinator with the answer
+                        let question = akinator.answer(ans).await?;
 
+                        // print out the next question
                         println!("{}",
                             question.unwrap_or_else(|| "no question".to_string())
                         );
                     } else {
+                        // Invalid answer from user
                         println!("Invalid Answer");
                     }
                 }
             }
         }
 
-        let guess = akinator.win()?.unwrap();
-        println!("{}", guess.name);
-        println!("{}", guess.description);
+        // akinator progression is at or over 80
+        // we then tell the akinator to end the game and make its guess with `Akinator::win`
+        let guess = akinator.win().await?.unwrap();
+        println!("Game Over!\n");
+        // print its first guess's name
+        println!("NAME: {}", guess.name);
+        // print its first guess's description
+        println!("DESCRIPTION: {}", guess.description);
+        // print its first guess's image URL
+        println!("IMAGE URL: {}", guess.absolute_picture_path);
 
         Ok(())
     }

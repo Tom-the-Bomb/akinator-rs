@@ -5,11 +5,12 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use lazy_static::lazy_static;
 use regex::RegexBuilder;
 use reqwest::{
-    blocking::Client,
+    Client,
     header::{
         HeaderMap, HeaderName, HeaderValue, USER_AGENT,
     },
 };
+use crate::enums::{Theme, Answer, Language};
 use crate::error::{
     Result,
     Error,
@@ -45,10 +46,10 @@ lazy_static! {
 #[derive(Debug, Clone)]
 pub struct Akinator {
     /// The language for the akinator session
-    pub language: String,
+    pub language: Language,
     /// The theme for the akinator session
     /// One of 'Characters', 'Animals', or 'Objects'
-    pub theme: enums::Theme,
+    pub theme: Theme,
     /// indicates whether or not to filter out NSFW questions and content
     pub child_mode: bool,
 
@@ -91,8 +92,8 @@ impl Akinator {
     /// with fields filled with default values
     pub fn new() -> Self {
         Self {
-            language: "en".to_string(),
-            theme: enums::Theme::Characters,
+            language: Language::English,
+            theme: Theme::Characters,
             child_mode: false,
 
             http_client: Client::new(),
@@ -115,14 +116,14 @@ impl Akinator {
     }
 
     /// builder method to set the [`Self.theme`] for the akinator game
-    pub fn theme(mut self, theme: enums::Theme) -> Self {
+    pub fn theme(mut self, theme: Theme) -> Self {
         self.theme = theme;
         self
     }
 
     /// builder method to set the [`Self.language`] for the akinator game
-    pub fn language(mut self, language: &str) -> Self {
-        self.language = language.to_string();
+    pub fn language(mut self, language: Language) -> Self {
+        self.language = language;
         self
     }
 
@@ -144,7 +145,7 @@ impl Akinator {
     }
 
     /// internal method used to parse and find the `ws_url` for this game
-    fn find_server(&self) -> Result<String> {
+    async fn find_server(&self) -> Result<String> {
         let data_regex = RegexBuilder::new(
             r#"\[\{"translated_theme_name":".*","urlWs":"https:\\/\\/srv[0-9]+\.akinator\.com:[0-9]+\\/ws","subject_id":"[0-9]+"\}\]"#
         )
@@ -153,8 +154,10 @@ impl Akinator {
             .build()?;
 
         let html = self.http_client.get(&self.uri)
-            .send()?
-            .text()?;
+            .send()
+            .await?
+            .text()
+            .await?;
 
         let id = (self.theme.clone() as usize)
             .to_string();
@@ -176,18 +179,19 @@ impl Akinator {
 
     /// internal method used to parse and find the session UID and frontaddr for the akinator session
     /// Done by parsing the javascript of the site, extracting variable values
-    fn find_session_info(&self) -> Result<(String, String)> {
+    async fn find_session_info(&self) -> Result<(String, String)> {
         let vars_regex =
             RegexBuilder::new(r#"var uid_ext_session = '(.*)';\n.*var frontaddr = '(.*)';"#)
                 .case_insensitive(true)
                 .multi_line(true)
                 .build()?;
 
-        let html = self
-            .http_client
+        let html = self.http_client
             .get("https://en.akinator.com/game")
-            .send()?
-            .text()?;
+            .send()
+            .await?
+            .text()
+            .await?;
 
         if let Some(mat) = vars_regex.captures(html.as_str()) {
             return Ok((mat[1].to_string(), mat[2].to_string()));
@@ -256,11 +260,11 @@ impl Akinator {
     }
 
     /// Starts the akinator game
-    pub fn start(&mut self) -> Result<()> {
-        self.ws_url = Some(self.find_server()?);
-        self.uri = format!("https://{}.akinator.com", self.language);
+    pub async fn start(&mut self) -> Result<()> {
+        self.ws_url = Some(self.find_server().await?);
+        self.uri = format!("https://{}.akinator.com", self.language.to_string());
 
-        let (uid, frontaddr) = self.find_session_info()?;
+        let (uid, frontaddr) = self.find_session_info().await?;
         self.uid = Some(uid);
         self.frontaddr = Some(frontaddr);
 
@@ -305,9 +309,10 @@ impl Akinator {
             .get(format!("{}/new_session", &self.uri))
             .headers(HEADERS.clone())
             .query(&params)
-            .send()?;
+            .send()
+            .await?;
 
-        let json_string = self.parse_response(response.text()?)?;
+        let json_string = self.parse_response(response.text().await?)?;
         let json: models::StartJson =
             serde_json::from_str(json_string.as_str())?;
 
@@ -321,7 +326,7 @@ impl Akinator {
     }
 
     /// answers the akinator's current question which can be retrieved with [`Self.current_question`]
-    pub fn answer(&mut self, answer: enums::Answer) -> Result<Option<String>> {
+    pub async fn answer(&mut self, answer: Answer) -> Result<Option<String>> {
         let params = [
             (
                 "callback",
@@ -344,8 +349,10 @@ impl Akinator {
             .get(format!("{}/answer_api", &self.uri))
             .headers(HEADERS.clone())
             .query(&params)
-            .send()?
-            .text()?;
+            .send()
+            .await?
+            .text()
+            .await?;
 
         let json_string = self.parse_response(response)?;
         let json: models::MoveJson =
@@ -361,7 +368,7 @@ impl Akinator {
 
     /// tells the akinator to end the game and make it's guess
     /// returns its best guess
-    pub fn win(&mut self) -> Result<Option<models::Guess>> {
+    pub async fn win(&mut self) -> Result<Option<models::Guess>> {
         let params = [
             (
                 "callback",
@@ -377,8 +384,10 @@ impl Akinator {
             .get(format!("{}/list", self.ws_url.as_ref().unwrap()))
             .headers(HEADERS.clone())
             .query(&params)
-            .send()?
-            .text()?;
+            .send()
+            .await?
+            .text()
+            .await?;
 
         let json_string = self.parse_response(response)?;
         let json: models::WinJson =
@@ -403,7 +412,7 @@ impl Akinator {
     }
 
     /// Goes back a question
-    pub fn back(&mut self) -> Result<Option<String>> {
+    pub async fn back(&mut self) -> Result<Option<String>> {
         if self.step == 0 {
             return Err(Error::CantGoBackAnyFurther);
         }
@@ -428,8 +437,10 @@ impl Akinator {
             .get(format!("{}/cancel_answer", self.ws_url.as_ref().unwrap()))
             .headers(HEADERS.clone())
             .query(&params)
-            .send()?
-            .text()?;
+            .send()
+            .await?
+            .text()
+            .await?;
 
         let json_string = self.parse_response(response)?;
         let json: models::MoveJson =
