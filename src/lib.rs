@@ -216,7 +216,8 @@ impl Akinator {
 
     /// updates the [`Akinator`] fields after each response
     fn update_move_info(&mut self, json: models::MoveJson) -> Result<(), UpdateInfoError> {
-        let params = json.parameters;
+        let params = json.parameters
+            .ok_or(UpdateInfoError::MissingData)?;
 
         self.current_question = Some(
             params.question
@@ -233,8 +234,15 @@ impl Akinator {
 
     /// similar to [`Self::update_move_info`], but only called once when [`Self::start`] is called
     fn update_start_info(&mut self, json: models::StartJson) -> Result<(), UpdateInfoError> {
-        let ident = json.parameters.identification;
-        let step_info = json.parameters.step_information;
+        let ident = &json.parameters
+            .as_ref()
+            .ok_or(UpdateInfoError::MissingData)?
+            .identification;
+
+        let step_info = &json.parameters
+            .as_ref()
+            .ok_or(UpdateInfoError::MissingData)?
+            .step_information;
 
         self.session = Some(
             ident.session
@@ -247,7 +255,7 @@ impl Akinator {
         );
 
         self.current_question = Some(
-            step_info.question
+            step_info.question.clone()
         );
 
         self.progression = step_info.progression
@@ -273,14 +281,14 @@ impl Akinator {
             .as_secs();
 
         let soft_constraint = match self.child_mode {
-            true => "ETAT%3D%27EN%27",
+            true => "ETAT='EN'",
             false => "",
         }
         .to_string();
 
         self.question_filter = Some(
             match self.child_mode {
-                true => "cat%3D1",
+                true => "cat=1",
                 false => "",
             }
             .to_string(),
@@ -394,7 +402,9 @@ impl Akinator {
             serde_json::from_str(json_string.as_str())?;
 
         if json.completion.as_str() == "OK" {
-            let elements = json.parameters.elements;
+            let elements = json.parameters
+                .ok_or(UpdateInfoError::MissingData)?
+                .elements;
 
             self.guesses = elements
                 .into_iter()

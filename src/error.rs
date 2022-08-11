@@ -17,6 +17,9 @@ pub enum UpdateInfoError {
 
     #[error("Faield to parse data: {0}")]
     ParseIntError(#[from] ParseIntError),
+
+    #[error("Missing an expected json field")]
+    MissingData,
 }
 
 
