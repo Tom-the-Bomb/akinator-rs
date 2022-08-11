@@ -121,8 +121,8 @@ impl Akinator {
     }
 
     /// builder method to set the [`Self.language`] for the akinator game
-    pub fn language(mut self, language: String) -> Self {
-        self.language = language;
+    pub fn language(mut self, language: &str) -> Self {
+        self.language = language.to_string();
         self
     }
 
@@ -136,7 +136,7 @@ impl Akinator {
     fn handle_error_response(&self, completion: String) -> Error {
         match completion.to_uppercase().as_str() {
             "KO - SERVER DOWN" => Error::ServersDown,
-            "KO - TECHNICAL ERROR" =>Error::TechnicalError,
+            "KO - TECHNICAL ERROR" => Error::TechnicalError,
             "KO - TIMEOUT" => Error::TimeoutError,
             "KO - ELEM LIST IS EMPTY" | "WARN - NO QUESTION" => Error::NoMoreQuestions,
             _ => Error::ConnectionError,
@@ -199,16 +199,15 @@ impl Akinator {
     /// internal method used to parse the response returned from the API
     /// strips the function call wrapped around the json, returning the json string
     fn parse_response(&self, html: String) -> Result<String> {
-        let response_regex = RegexBuilder::new(r"jQuery\d+_\d+\((\{.+\})\)")
-            .case_insensitive(true)
-            .multi_line(true)
-            .build()?;
+        let response_regex =
+            RegexBuilder::new(r"^jQuery\d+_\d+\((?P<json>\{.+\})\)$")
+                .case_insensitive(true)
+                .multi_line(true)
+                .build()?;
 
-        if let Some(mat) = response_regex.captures(html.as_str()) {
-            return Ok(mat[1].to_string());
-        }
-
-        Err(Error::ParseResponseError)
+        Ok(response_regex
+            .replace(html.as_str(), "$json")
+            .to_string())
     }
 
     /// updates the [`Akinator`] fields after each response
@@ -322,7 +321,7 @@ impl Akinator {
     }
 
     /// answers the akinator's current question which can be retrieved with [`Self.current_question`]
-    pub fn answer(&mut self, answer: enums::Answer) -> Result<&Option<String>> {
+    pub fn answer(&mut self, answer: enums::Answer) -> Result<Option<String>> {
         let params = [
             (
                 "callback",
@@ -354,7 +353,7 @@ impl Akinator {
 
         if json.completion.as_str() == "OK" {
             self.update_move_info(json)?;
-            return Ok(&self.current_question);
+            return Ok(self.current_question.clone());
         }
 
         Err(self.handle_error_response(json.completion))
@@ -362,7 +361,7 @@ impl Akinator {
 
     /// tells the akinator to end the game and make it's guess
     /// returns its best guess
-    pub fn win(&mut self) -> Result<&Option<models::Guess>> {
+    pub fn win(&mut self) -> Result<Option<models::Guess>> {
         let params = [
             (
                 "callback",
@@ -397,14 +396,14 @@ impl Akinator {
                 .first()
                 .cloned();
 
-            return Ok(&self.first_guess);
+            return Ok(self.first_guess.clone());
         }
 
         Err(self.handle_error_response(json.completion))
     }
 
     /// Goes back a question
-    pub fn back(&mut self) -> Result<()> {
+    pub fn back(&mut self) -> Result<Option<String>> {
 
         if self.step == 0 {
             return Err(Error::CantGoBackAnyFurther)
@@ -440,7 +439,7 @@ impl Akinator {
         if json.completion.as_str() == "OK" {
             self.update_move_info(json)?;
 
-            return Ok(());
+            return Ok(self.current_question.clone());
         }
 
         Err(self.handle_error_response(json.completion))

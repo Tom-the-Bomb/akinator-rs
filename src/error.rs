@@ -37,9 +37,6 @@ pub enum Error {
     #[error("Failed to build regex pattern: {0}")]
     RegexBuildError(#[from] RegexError),
 
-    #[error("Failed to parse API response")]
-    ParseResponseError,
-
     #[error("Failed to find the relevant data")]
     NoDataFound,
 
