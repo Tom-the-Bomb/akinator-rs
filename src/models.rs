@@ -59,7 +59,7 @@ pub struct ServerData {
 }
 
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Guess {
     pub id: String,
     pub name: String,

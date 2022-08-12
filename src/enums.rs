@@ -3,7 +3,7 @@ use crate::error::{Result, Error};
 
 
 /// Enum representing an Answer to the akinator's questions
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Answer {
     Yes = 0,
     No = 1,
@@ -13,7 +13,7 @@ pub enum Answer {
 }
 
 /// Enum representing the theme of the akinator game
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Theme {
     Characters = 1,
     Animals = 14,
@@ -21,7 +21,7 @@ pub enum Theme {
 }
 
 /// Enum representing the language of the akinator game
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Language {
     English,
     Arabic,
