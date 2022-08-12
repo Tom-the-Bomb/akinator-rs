@@ -116,13 +116,13 @@ impl Akinator {
     }
 
     /// builder method to set the [`Self.theme`] for the akinator game
-    pub fn theme(mut self, theme: Theme) -> Self {
+    pub fn with_theme(mut self, theme: Theme) -> Self {
         self.theme = theme;
         self
     }
 
     /// builder method to set the [`Self.language`] for the akinator game
-    pub fn language(mut self, language: Language) -> Self {
+    pub fn with_language(mut self, language: Language) -> Self {
         self.language = language;
         self
     }
@@ -168,11 +168,12 @@ impl Akinator {
                 serde_json::from_str(mat.as_str())?;
 
             let mat = json
-                .iter()
+                .into_iter()
                 .filter(|entry| entry.subject_id == id)
-                .collect::<Vec<_>>()[0];
+                .next()
+                .unwrap();
 
-            return Ok(mat.urlWs.clone());
+            return Ok(mat.url_ws);
         }
 
         Err(Error::NoDataFound)

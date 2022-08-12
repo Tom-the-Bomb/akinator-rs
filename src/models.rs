@@ -52,9 +52,9 @@ pub struct WinJson {
 
 
 #[derive(Serialize, Deserialize)]
-#[allow(non_snake_case)]
 pub struct ServerData {
-    pub urlWs: String,
+    #[serde(rename = "urlWs")]
+    pub url_ws: String,
     pub subject_id: String,
 }
 
