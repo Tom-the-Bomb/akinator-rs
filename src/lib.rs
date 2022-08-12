@@ -321,7 +321,7 @@ impl Akinator {
         let params = [
             (
                 "callback",
-                format!("jQuery331023608747682107778_{}", self.timestamp.to_string()),
+                format!("jQuery331023608747682107778_{}", self.timestamp),
             ),
             ("urlApiWs", self.ws_url.as_ref().unwrap().to_string()),
             ("partner", 1.to_string()),
@@ -362,7 +362,7 @@ impl Akinator {
         let params = [
             (
                 "callback",
-                format!("jQuery331023608747682107778_{}", self.timestamp.to_string()),
+                format!("jQuery331023608747682107778_{}", self.timestamp),
             ),
             ("urlApiWs", self.ws_url.as_ref().unwrap().to_string()),
             ("childMod", self.child_mode.to_string()),
@@ -405,7 +405,7 @@ impl Akinator {
         let params = [
             (
                 "callback",
-                format!("jQuery331023608747682107778_{}", self.timestamp.to_string()),
+                format!("jQuery331023608747682107778_{}", self.timestamp),
             ),
             ("childMod", self.child_mode.to_string()),
             ("session", self.session.as_ref().unwrap().to_string()),
@@ -456,7 +456,7 @@ impl Akinator {
         let params = [
             (
                 "callback",
-                format!("jQuery331023608747682107778_{}", self.timestamp.to_string()),
+                format!("jQuery331023608747682107778_{}", self.timestamp),
             ),
             ("childMod", self.child_mode.to_string()),
             ("session", self.session.as_ref().unwrap().to_string()),
