@@ -182,10 +182,10 @@ impl Akinator {
                 .next()
                 .unwrap();
 
-            return Ok(mat.url_ws);
+            Ok(mat.url_ws)
+        } else {
+            Err(Error::NoDataFound)
         }
-
-        Err(Error::NoDataFound)
     }
 
     /// internal method used to parse and find the session uid and frontaddr for the akinator session
@@ -215,10 +215,10 @@ impl Akinator {
                     .as_str().to_string(),
             );
 
-            return Ok(result);
+            Ok(result)
+        } else {
+            Err(Error::NoDataFound)
         }
-
-        Err(Error::NoDataFound)
     }
 
     /// internal method used to parse the response returned from the API
@@ -351,10 +351,10 @@ impl Akinator {
         if json.completion.as_str() == "OK" {
             self.update_start_info(json)?;
 
-            return Ok(self.current_question.clone());
+            Ok(self.current_question.clone())
+        } else {
+            Err(self.handle_error_response(json.completion))
         }
-
-        Err(self.handle_error_response(json.completion))
     }
 
     /// answers the akinator's current question which can be retrieved with [`Self.current_question`]
@@ -392,10 +392,11 @@ impl Akinator {
 
         if json.completion.as_str() == "OK" {
             self.update_move_info(json)?;
-            return Ok(self.current_question.clone());
-        }
 
-        Err(self.handle_error_response(json.completion))
+            Ok(self.current_question.clone())
+        } else {
+            Err(self.handle_error_response(json.completion))
+        }
     }
 
     /// tells the akinator to end the game and make it's guess
@@ -439,10 +440,10 @@ impl Akinator {
                 .first()
                 .cloned();
 
-            return Ok(self.first_guess.clone());
+            Ok(self.first_guess.clone())
+        } else {
+            Err(self.handle_error_response(json.completion))
         }
-
-        Err(self.handle_error_response(json.completion))
     }
 
     /// Goes back 1 question and returns the current question
@@ -484,9 +485,9 @@ impl Akinator {
         if json.completion.as_str() == "OK" {
             self.update_move_info(json)?;
 
-            return Ok(self.current_question.clone());
+            Ok(self.current_question.clone())
+        } else {
+            Err(self.handle_error_response(json.completion))
         }
-
-        Err(self.handle_error_response(json.completion))
     }
 }
