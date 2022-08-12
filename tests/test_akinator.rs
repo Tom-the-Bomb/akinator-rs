@@ -5,6 +5,7 @@ mod tests {
     use akinator_rs::error::{Result, Error};
 
     #[tokio::test]
+    /// a complete test for a full akinator game
     async fn test_akinator() -> Result<()> {
         // create a new akinator instance
         let mut akinator = Akinator::new()

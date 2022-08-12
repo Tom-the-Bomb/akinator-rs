@@ -59,7 +59,7 @@ pub struct Akinator {
     /// used for keeping track of sessions
     timestamp: u64,
     /// the base URI to use when making requests
-    /// usually: https://{language}.akinator.com
+    /// usually: https://{language}.akinator.com/
     uri: String,
     /// The unique identifier for the akinator session
     uid: Option<String>,
@@ -133,7 +133,8 @@ impl Akinator {
         self
     }
 
-    /// Handles an error response from the akinator API
+    /// Internal method to handle an error response from the akinator API
+    /// and return an appropriate Err value
     fn handle_error_response(&self, completion: String) -> Error {
         match completion.to_uppercase().as_str() {
             "KO - SERVER DOWN" => Error::ServersDown,
@@ -144,7 +145,7 @@ impl Akinator {
         }
     }
 
-    /// internal method used to parse and find the `ws_url` for this game
+    /// internal method used to parse and find the [`Self.ws_url`] for this game
     async fn find_server(&self) -> Result<String> {
         let data_regex = RegexBuilder::new(
             r#"\[\{"translated_theme_name":".*","urlWs":"https:\\/\\/srv[0-9]+\.akinator\.com:[0-9]+\\/ws","subject_id":"[0-9]+"\}\]"#
@@ -177,7 +178,7 @@ impl Akinator {
         Err(Error::NoDataFound)
     }
 
-    /// internal method used to parse and find the session UID and frontaddr for the akinator session
+    /// internal method used to parse and find the session uid and frontaddr for the akinator session
     /// Done by parsing the javascript of the site, extracting variable values
     async fn find_session_info(&self) -> Result<(String, String)> {
         let vars_regex =
@@ -267,8 +268,8 @@ impl Akinator {
         Ok(())
     }
 
-    /// Starts the akinator game
-    pub async fn start(&mut self) -> Result<()> {
+    /// Starts the akinator game and returns the first question
+    pub async fn start(&mut self) -> Result<Option<String>> {
         self.ws_url = Some(self.find_server().await?);
         self.uri = format!("https://{}.akinator.com", self.language.to_string());
 
@@ -327,7 +328,7 @@ impl Akinator {
         if json.completion.as_str() == "OK" {
             self.update_start_info(json)?;
 
-            return Ok(());
+            return Ok(self.current_question.clone());
         }
 
         Err(self.handle_error_response(json.completion))
@@ -375,7 +376,7 @@ impl Akinator {
     }
 
     /// tells the akinator to end the game and make it's guess
-    /// returns its best guess
+    /// and returns its best guess
     pub async fn win(&mut self) -> Result<Option<models::Guess>> {
         let params = [
             (
@@ -421,7 +422,8 @@ impl Akinator {
         Err(self.handle_error_response(json.completion))
     }
 
-    /// Goes back a question
+    /// Goes back 1 question and returns the current question
+    /// Returns an Err value with [`Error::CantGoBackAnyFurther`] if we are already on question 0
     pub async fn back(&mut self) -> Result<Option<String>> {
         if self.step == 0 {
             return Err(Error::CantGoBackAnyFurther);

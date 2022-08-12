@@ -1,20 +1,20 @@
 use serde::{Serialize, Deserialize};
 
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Serialize, Deserialize)]
 pub struct StepInfo {
     pub step: String,
     pub question: String,
     pub progression: String,
 }
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Serialize, Deserialize)]
 pub struct IdentJson {
     pub session: String,
     pub signature: String,
 }
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Serialize, Deserialize)]
 pub struct ParametersJson {
     pub identification: IdentJson,
     pub step_information: StepInfo,
