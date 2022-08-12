@@ -82,5 +82,5 @@ pub enum Error {
     InvalidLanguage,
 }
 
-/// result typealias with `E`, defaults to [`Error`]
+/// result typealias with `E` that defaults to [`Error`]
 pub type Result<T, E = Error> = std::result::Result<T, E>;

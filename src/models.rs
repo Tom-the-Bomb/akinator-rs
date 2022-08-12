@@ -2,57 +2,57 @@ use serde::{Serialize, Deserialize};
 
 
 #[derive(Serialize, Deserialize)]
-pub struct StepInfo {
+pub(crate) struct StepInfo {
     pub step: String,
     pub question: String,
     pub progression: String,
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct IdentJson {
+pub(crate) struct IdentJson {
     pub session: String,
     pub signature: String,
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct ParametersJson {
+pub(crate) struct ParametersJson {
     pub identification: IdentJson,
-    pub step_information: StepInfo,
+    pub(crate) step_information: StepInfo,
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct StartJson {
+pub(crate) struct StartJson {
     pub completion: String,
-    pub parameters: Option<ParametersJson>,
+    pub(crate) parameters: Option<ParametersJson>,
 }
 
 
 #[derive(Serialize, Deserialize)]
-pub struct MoveJson {
+pub(crate) struct MoveJson {
     pub completion: String,
-    pub parameters: Option<StepInfo>,
+    pub(crate) parameters: Option<StepInfo>,
 }
 
 
 #[derive(Serialize, Deserialize)]
-pub struct WinElement {
+pub(crate) struct WinElement {
     pub element: Guess,
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct WinParams {
-    pub elements: Vec<WinElement>,
+pub(crate) struct WinParams {
+    pub(crate) elements: Vec<WinElement>,
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct WinJson {
+pub(crate) struct WinJson {
     pub completion: String,
-    pub parameters: Option<WinParams>,
+    pub(crate) parameters: Option<WinParams>,
 }
 
 
 #[derive(Serialize, Deserialize)]
-pub struct ServerData {
+pub(crate) struct ServerData {
     #[serde(rename = "urlWs")]
     pub url_ws: String,
     pub subject_id: String,
