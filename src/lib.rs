@@ -87,6 +87,12 @@ pub struct Akinator {
     pub guesses: Vec<models::Guess>,
 }
 
+impl Default for Akinator {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Akinator {
     /// Creates a new [`Akinator`] instance
     /// with fields filled with default values
@@ -196,7 +202,14 @@ impl Akinator {
             .await?;
 
         if let Some(mat) = vars_regex.captures(html.as_str()) {
-            return Ok((mat[1].to_string(), mat[2].to_string()));
+            let result = (
+                mat.get(1).ok_or(Error::NoDataFound)?
+                    .as_str().to_string(),
+                mat.get(2).ok_or(Error::NoDataFound)?
+                    .as_str().to_string(),
+            );
+
+            return Ok(result);
         }
 
         Err(Error::NoDataFound)
