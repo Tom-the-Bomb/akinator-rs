@@ -3,7 +3,7 @@
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use lazy_static::lazy_static;
-use regex::RegexBuilder;
+use regex::{Regex, RegexBuilder};
 use reqwest::{
     Client,
     header::{
@@ -153,12 +153,15 @@ impl Akinator {
 
     /// internal method used to parse and find the [`Self.ws_url`] for this game
     async fn find_server(&self) -> Result<String> {
-        let data_regex = RegexBuilder::new(
-            r#"\[\{"translated_theme_name":".*","urlWs":"https:\\/\\/srv[0-9]+\.akinator\.com:[0-9]+\\/ws","subject_id":"[0-9]+"\}\]"#
-        )
-            .case_insensitive(true)
-            .multi_line(true)
-            .build()?;
+        lazy_static! {
+            static ref DATA_REGEX: Regex = RegexBuilder::new(
+                r#"\[\{"translated_theme_name":".*","urlWs":"https:\\/\\/srv[0-9]+\.akinator\.com:[0-9]+\\/ws","subject_id":"[0-9]+"\}\]"#
+            )
+                .case_insensitive(true)
+                .multi_line(true)
+                .build()
+                .unwrap();
+        }
 
         let html = self.http_client.get(&self.uri)
             .send()
@@ -169,7 +172,7 @@ impl Akinator {
         let id = (self.theme.clone() as usize)
             .to_string();
 
-        if let Some(mat) = data_regex.find(html.as_str()) {
+        if let Some(mat) = DATA_REGEX.find(html.as_str()) {
             let json: Vec<models::ServerData> =
                 serde_json::from_str(mat.as_str())?;
 
@@ -188,11 +191,14 @@ impl Akinator {
     /// internal method used to parse and find the session uid and frontaddr for the akinator session
     /// Done by parsing the javascript of the site, extracting variable values
     async fn find_session_info(&self) -> Result<(String, String)> {
-        let vars_regex =
-            RegexBuilder::new(r#"var uid_ext_session = '(.*)';\n.*var frontaddr = '(.*)';"#)
-                .case_insensitive(true)
-                .multi_line(true)
-                .build()?;
+        lazy_static! {
+            static ref VARS_REGEX: Regex =
+                RegexBuilder::new(r#"var uid_ext_session = '(.*)';\n.*var frontaddr = '(.*)';"#)
+                    .case_insensitive(true)
+                    .multi_line(true)
+                    .build()
+                    .unwrap();
+        }
 
         let html = self.http_client
             .get("https://en.akinator.com/game")
@@ -201,7 +207,7 @@ impl Akinator {
             .text()
             .await?;
 
-        if let Some(mat) = vars_regex.captures(html.as_str()) {
+        if let Some(mat) = VARS_REGEX.captures(html.as_str()) {
             let result = (
                 mat.get(1).ok_or(Error::NoDataFound)?
                     .as_str().to_string(),
@@ -218,13 +224,16 @@ impl Akinator {
     /// internal method used to parse the response returned from the API
     /// strips the function call wrapped around the json, returning the json string
     fn parse_response(&self, html: String) -> Result<String> {
-        let response_regex =
-            RegexBuilder::new(r"^jQuery\d+_\d+\((?P<json>\{.+\})\)$")
-                .case_insensitive(true)
-                .multi_line(true)
-                .build()?;
+        lazy_static! {
+            static ref RESPONSE_REGEX: Regex =
+                RegexBuilder::new(r"^jQuery\d+_\d+\((?P<json>\{.+\})\)$")
+                    .case_insensitive(true)
+                    .multi_line(true)
+                    .build()
+                    .unwrap();
+        }
 
-        Ok(response_regex
+        Ok(RESPONSE_REGEX
             .replace(html.as_str(), "$json")
             .to_string())
     }

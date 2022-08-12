@@ -3,7 +3,6 @@ use thiserror::Error as ErrorBase;
 use std::time::SystemTimeError;
 use serde_json::error::Error as SerdeJsonError;
 use reqwest::Error as ReqwestError;
-use regex::Error as RegexError;
 use std::num::{
     ParseFloatError,
     ParseIntError,
@@ -45,10 +44,6 @@ pub enum Error {
     /// conversion from [`UpdateInfoError`]
     #[error("Failed to update data fields: {0}")]
     UpdateInfoError(#[from] UpdateInfoError),
-
-    /// from propogating [`RegexError`] when building a regex pattern fails
-    #[error("Failed to build regex pattern: {0}")]
-    RegexBuildError(#[from] RegexError),
 
     /// from when searching for information such as the WS url and session info etc.
     #[error("Failed to find the required information needed to start the game")]
