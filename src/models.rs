@@ -58,15 +58,24 @@ pub(crate) struct ServerData {
     pub subject_id: String,
 }
 
-
+/// represents a guess that the akinator makes at the end of the game
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Guess {
+    /// the unique id of the guess
     pub id: String,
+    /// the name of the guess
     pub name: String,
     pub award_id: String,
     pub flag_photo: usize,
+    /// the akinator's confidence level / probability that this guess is accurate
+    #[serde(rename = "proba")]
+    pub confidence: String,
+    /// a brief desription of the guess
     pub description: String,
+    /// the ranking place of the guess
     pub ranking: String,
+    /// the relative url to the image of the guess
     pub picture_path: String,
+    /// the absolute url to the image of the guess
     pub absolute_picture_path: String,
 }
