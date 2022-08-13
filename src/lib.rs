@@ -304,18 +304,16 @@ impl Akinator {
             .duration_since(UNIX_EPOCH)?
             .as_secs();
 
-        let soft_constraint = match self.child_mode {
-            true => "ETAT='EN'",
-            false => "",
-        }
-        .to_string();
+        let soft_constraint = self.child_mode
+            .then_some("ETAT='EN'")
+            .unwrap_or("")
+            .to_string();
 
         self.question_filter = Some(
-            match self.child_mode {
-                true => "cat=1",
-                false => "",
-            }
-            .to_string(),
+            self.child_mode
+                .then_some("cat=1")
+                .unwrap_or("")
+                .to_string()
         );
 
         let params = [

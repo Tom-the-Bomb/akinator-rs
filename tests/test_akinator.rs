@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use akinator_rs::Akinator;
-    use akinator_rs::enums::Answer;
+    use akinator_rs::enums::{Theme, Answer};
     use akinator_rs::error::{Result, Error};
 
     #[tokio::test]
@@ -9,15 +9,15 @@ mod tests {
     async fn test_akinator() -> Result<()> {
         // create a new akinator instance
         let mut akinator = Akinator::new()
+            .with_theme(Theme::Objects) // set theme to objects
             .with_child_mode(); // set child mode to true
 
         // start the akinator game
-        akinator.start().await?;
+        let first_question = akinator.start().await?;
 
         // print out our first question
         println!("{}",
-            akinator.current_question.clone()
-                .unwrap_or_else(|| "no question".to_string())
+            first_question.unwrap_or_else(|| "no question".to_string())
         );
 
         // while the progression of the akinator is less than 80,

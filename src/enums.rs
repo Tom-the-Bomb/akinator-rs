@@ -1,8 +1,12 @@
+use std::fmt;
 use std::str::FromStr;
+
 use crate::error::{Result, Error};
 
 
-/// Enum representing an Answer to the akinator's questions
+/// Enum representing a user's answer to the akinator's questions
+/// intended to be passed into [`Akinator::answer`]
+/// for parsing from a string, use the `from_str` / [`str::parse`] or `try_from` methods
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Answer {
     Yes = 0,
@@ -13,6 +17,8 @@ pub enum Answer {
 }
 
 /// Enum representing the theme of the akinator game
+/// intended to be pased into [`Akinator::with_theme`] when setting the theme of the game
+/// for parsing from a string, use the `from_str / [`str::parse`]` or `from` methods
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Theme {
     Characters = 1,
@@ -21,6 +27,8 @@ pub enum Theme {
 }
 
 /// Enum representing the language of the akinator game
+/// intended to be pased into [`Akinator::with_language`] when setting the language of the game
+/// for parsing from a string, use the `from_str` / [`str::parse`] or `try_from` methods
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Language {
     English,
@@ -126,9 +134,9 @@ impl From<usize> for Theme {
 }
 
 
-impl ToString for Language {
-    fn to_string(&self) -> String {
-        match self {
+impl fmt::Display for Language {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(match self {
             Self::English => "en",
             Self::Arabic => "ar",
             Self::Chinese => "cn",
@@ -145,8 +153,7 @@ impl ToString for Language {
             Self::Russian => "ru",
             Self::Turkish => "tr",
             Self::Indonesian => "id",
-        }
-        .to_string()
+        })
     }
 }
 
