@@ -5,7 +5,9 @@ use crate::error::{Result, Error};
 
 
 /// Enum representing a user's answer to the akinator's questions
+///
 /// intended to be passed into [`Akinator::answer`]
+///
 /// for parsing from a string, use the `from_str` / [`str::parse`] or `try_from` methods
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Answer {
@@ -17,7 +19,9 @@ pub enum Answer {
 }
 
 /// Enum representing the theme of the akinator game
+///
 /// intended to be pased into [`Akinator::with_theme`] when setting the theme of the game
+///
 /// for parsing from a string, use the `from_str / [`str::parse`]` or `from` methods
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Theme {
@@ -27,7 +31,9 @@ pub enum Theme {
 }
 
 /// Enum representing the language of the akinator game
+///
 /// intended to be pased into [`Akinator::with_language`] when setting the language of the game
+///
 /// for parsing from a string, use the `from_str` / [`str::parse`] or `try_from` methods
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Language {
@@ -51,6 +57,7 @@ pub enum Language {
 
 /// internal method attempting to convert a string answer: (ex: "yes")
 /// to an [`Answer`] variant
+///
 /// used in [`FromStr`] and [`TryFrom`] implementations
 fn try_answer_from_string(ans: String) -> Result<Answer> {
     match ans.trim().to_lowercase().as_str() {
@@ -98,6 +105,7 @@ impl TryFrom<usize> for Answer {
 
 /// internal method to convert a string representing a theme: (ex: "animals")
 /// to a [`Theme`] variant
+///
 /// used in [`FromStr`] and [`From`] implementations
 fn theme_from_string(theme: String) -> Theme {
     match theme.trim().to_lowercase().as_str() {
@@ -159,6 +167,7 @@ impl fmt::Display for Language {
 
 /// internal method attempting to convert a string representing a language: (ex: "english")
 /// to a [`Language`] variant
+///
 /// used in [`FromStr`] and [`TryFrom`] implementations
 fn try_lang_from_string(lang: String) -> Result<Language> {
     match lang.trim().to_lowercase().as_str() {

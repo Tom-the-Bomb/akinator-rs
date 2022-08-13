@@ -48,6 +48,7 @@ pub struct Akinator {
     /// The language for the akinator session
     pub language: Language,
     /// The theme for the akinator session
+    ///
     /// One of 'Characters', 'Animals', or 'Objects'
     pub theme: Theme,
     /// indicates whether or not to filter out NSFW questions and content
@@ -80,9 +81,11 @@ pub struct Akinator {
     pub step: usize,
 
     /// returns the akinator's best guess
+    ///
     /// Only will be set when [`Self::win`] has been called
     pub first_guess: Option<models::Guess>,
     /// a vec containing all the possible guesses by the akinator
+    ///
     /// Only will be set when [`Self::win`] has been called
     pub guesses: Vec<models::Guess>,
 }
@@ -189,6 +192,7 @@ impl Akinator {
     }
 
     /// internal method used to parse and find the session uid and frontaddr for the akinator session
+    ///
     /// Done by parsing the javascript of the site, extracting variable values
     async fn find_session_info(&self) -> Result<(String, String)> {
         lazy_static! {
@@ -222,6 +226,7 @@ impl Akinator {
     }
 
     /// internal method used to parse the response returned from the API
+    ///
     /// strips the function call wrapped around the json, returning the json string
     fn parse_response(&self, html: String) -> Result<String> {
         lazy_static! {
@@ -398,7 +403,7 @@ impl Akinator {
     }
 
     /// tells the akinator to end the game and make it's guess
-    /// and returns its best guess
+    /// and returns its best guess, which also can be retrieved with [`Self.first_guess`]
     pub async fn win(&mut self) -> Result<Option<models::Guess>> {
         let params = [
             (
