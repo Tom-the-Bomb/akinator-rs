@@ -22,7 +22,7 @@ pub enum Answer {
 ///
 /// intended to be pased into [`Akinator::with_theme`] when setting the theme of the game
 ///
-/// for parsing from a string, use the `from_str / [`str::parse`]` or `from` methods
+/// for parsing from a string, use the `from_str` / [`str::parse`] or `from` methods
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Theme {
     Characters = 1,

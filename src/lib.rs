@@ -227,7 +227,7 @@ impl Akinator {
     /// internal method used to parse the response returned from the API
     ///
     /// strips the function call wrapped around the json, returning the json string
-    fn parse_response(&self, html: String) -> Result<String> {
+    fn parse_response(&self, html: String) -> String {
         lazy_static! {
             static ref RESPONSE_REGEX: Regex =
                 RegexBuilder::new(r"^jQuery\d+_\d+\((?P<json>\{.+\})\)$")
@@ -237,9 +237,9 @@ impl Akinator {
                     .unwrap();
         }
 
-        Ok(RESPONSE_REGEX
+        RESPONSE_REGEX
             .replace(html.as_str(), "$json")
-            .to_string())
+            .to_string()
     }
 
     /// updates the [`Akinator`] fields after each response
@@ -346,7 +346,7 @@ impl Akinator {
             .send()
             .await?;
 
-        let json_string = self.parse_response(response.text().await?)?;
+        let json_string = self.parse_response(response.text().await?);
         let json: models::StartJson =
             serde_json::from_str(json_string.as_str())?;
 
@@ -388,7 +388,7 @@ impl Akinator {
             .text()
             .await?;
 
-        let json_string = self.parse_response(response)?;
+        let json_string = self.parse_response(response);
         let json: models::MoveJson =
             serde_json::from_str(json_string.as_str())?;
 
@@ -424,7 +424,7 @@ impl Akinator {
             .text()
             .await?;
 
-        let json_string = self.parse_response(response)?;
+        let json_string = self.parse_response(response);
         let json: models::WinJson =
             serde_json::from_str(json_string.as_str())?;
 
@@ -480,7 +480,7 @@ impl Akinator {
             .text()
             .await?;
 
-        let json_string = self.parse_response(response)?;
+        let json_string = self.parse_response(response);
         let json: models::MoveJson =
             serde_json::from_str(json_string.as_str())?;
 
