@@ -2,7 +2,7 @@
 name = "akinator-rs"
 authors = ["Tom-the-Bomb"]
 description = "A simple wrapper around the undocumended Akinator API"
-version = "0.1.5"
+version = "0.1.6"
 edition = "2021"
 license = "MIT"
 readme = "README.md"
