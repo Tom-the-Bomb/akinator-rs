@@ -4,4 +4,5 @@ based off of the preexisting [TypeScript](https://github.com/jgoralcz/aki-api) w
 which was deleted from github & pypi at the time of making (also what made me want to make my own)
 
 ### Examples
-See [the tests](https://github.com/Tom-the-Bomb/akinator-rs/blob/master/tests/test_akinator.rs) for a full example.
+- See [the tests](https://github.com/Tom-the-Bomb/akinator-rs/blob/master/tests/test_akinator.rs) for a full example.
+- Visit the [documentation](https://docs.rs/akinator-rs/latest/akinator_rs/) for more info

@@ -6,6 +6,7 @@ version = "0.1.7"
 edition = "2021"
 license = "MIT"
 readme = "README.md"
+documentation = "https://docs.rs/akinator-rs/latest/akinator_rs/"
 repository = "https://github.com/Tom-the-Bomb/akinator-rs"
 homepage = "https://github.com/Tom-the-Bomb/akinator-rs"
 keywords = [
