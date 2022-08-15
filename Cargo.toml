@@ -12,7 +12,13 @@ keywords = [
     "akinator-rs",
     "akinator",
     "async",
+    "game",
+    "http",
     "api",
+]
+categories = [
+    "Asynchronous",
+    "Games",
 ]
 
 
