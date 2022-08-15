@@ -11,6 +11,7 @@ use std::num::{
 
 /// returned in the update info methods
 #[derive(Debug, ErrorBase)]
+#[allow(clippy::module_name_repetitions)]
 pub enum UpdateInfoError {
     /// from propogating [`ParseFloatError`] when parsing json struct fields into [`f32`] fails
     #[error("Failed to parse data: {0}")]

@@ -59,6 +59,7 @@ pub enum Language {
 /// to an [`Answer`] variant
 ///
 /// used in [`FromStr`] and [`TryFrom`] implementations
+#[allow(clippy::needless_pass_by_value)]
 fn try_answer_from_string(ans: String) -> Result<Answer> {
     match ans.trim().to_lowercase().as_str() {
         "yes" | "y" | "0" => Ok(Answer::Yes),
@@ -86,7 +87,6 @@ impl TryFrom<&str> for Answer {
     }
 }
 
-
 impl TryFrom<String> for Answer {
     type Error = Error;
 
@@ -107,11 +107,18 @@ impl TryFrom<usize> for Answer {
 /// to a [`Theme`] variant
 ///
 /// used in [`FromStr`] and [`From`] implementations
+#[allow(clippy::needless_pass_by_value)]
 fn theme_from_string(theme: String) -> Theme {
     match theme.trim().to_lowercase().as_str() {
         "a" | "animals" => Theme::Animals,
         "o" | "objects" => Theme::Objects,
         _ => Theme::Characters,
+    }
+}
+
+impl Default for Theme {
+    fn default() -> Self {
+        Self::Characters
     }
 }
 
@@ -169,6 +176,7 @@ impl fmt::Display for Language {
 /// to a [`Language`] variant
 ///
 /// used in [`FromStr`] and [`TryFrom`] implementations
+#[allow(clippy::needless_pass_by_value)]
 fn try_lang_from_string(lang: String) -> Result<Language> {
     match lang.trim().to_lowercase().as_str() {
         "english" | "en" => Ok(Language::English),
@@ -187,6 +195,12 @@ fn try_lang_from_string(lang: String) -> Result<Language> {
         "turkish" | "tr" => Ok(Language::Turkish),
         "indonesian" | "id" => Ok(Language::Indonesian),
         _ => Err(Error::InvalidLanguage)
+    }
+}
+
+impl Default for Language {
+    fn default() -> Self {
+        Self::English
     }
 }
 

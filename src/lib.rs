@@ -41,6 +41,13 @@ lazy_static! {
     };
 }
 
+/// simple macro for retrieving an `Option` field's value
+/// to avoid repetition as this is frequently used
+macro_rules! get_field {
+    ( $field: expr ) => {
+        $field.as_ref().ok_or(Error::NoDataFound)?.to_string()
+    }
+}
 
 /// Represents an akinator game
 #[derive(Debug, Clone)]
@@ -99,6 +106,7 @@ impl Default for Akinator {
 impl Akinator {
     /// Creates a new [`Akinator`] instance
     /// with fields filled with default values
+    #[must_use]
     pub fn new() -> Self {
         Self {
             language: Language::English,
@@ -125,26 +133,31 @@ impl Akinator {
     }
 
     /// builder method to set the [`Self.theme`] for the akinator game
-    pub fn with_theme(mut self, theme: Theme) -> Self {
+    #[must_use]
+    pub const fn with_theme(mut self, theme: Theme) -> Self {
         self.theme = theme;
         self
     }
 
     /// builder method to set the [`Self.language`] for the akinator game
-    pub fn with_language(mut self, language: Language) -> Self {
+    #[must_use]
+    pub const fn with_language(mut self, language: Language) -> Self {
         self.language = language;
         self
     }
 
     /// builder function to turn on [`Self.child_mode`]
-    pub fn with_child_mode(mut self) -> Self {
+    #[must_use]
+    pub const fn with_child_mode(mut self) -> Self {
         self.child_mode = true;
         self
     }
 
     /// Internal method to handle an error response from the akinator API
     /// and return an appropriate Err value
-    fn handle_error_response(&self, completion: String) -> Error {
+    #[must_use]
+    #[allow(clippy::needless_pass_by_value)]
+    fn handle_error_response(completion: String) -> Error {
         match completion.to_uppercase().as_str() {
             "KO - SERVER DOWN" => Error::ServersDown,
             "KO - TECHNICAL ERROR" => Error::TechnicalError,
@@ -227,7 +240,9 @@ impl Akinator {
     /// internal method used to parse the response returned from the API
     ///
     /// strips the function call wrapped around the json, returning the json string
-    fn parse_response(&self, html: String) -> String {
+    #[must_use]
+    #[allow(clippy::needless_pass_by_value)]
+    fn parse_response(html: String) -> String {
         lazy_static! {
             static ref RESPONSE_REGEX: Regex =
                 RegexBuilder::new(r"^jQuery\d+_\d+\((?P<json>\{.+\})\)$")
@@ -261,7 +276,7 @@ impl Akinator {
     }
 
     /// similar to [`Self::update_move_info`], but only called once when [`Self::start`] is called
-    fn update_start_info(&mut self, json: models::StartJson) -> Result<(), UpdateInfoError> {
+    fn update_start_info(&mut self, json: &models::StartJson) -> Result<(), UpdateInfoError> {
         let ident = &json.parameters
             .as_ref()
             .ok_or(UpdateInfoError::MissingData)?
@@ -296,6 +311,10 @@ impl Akinator {
     }
 
     /// Starts the akinator game and returns the first question
+    ///
+    /// # Errors
+    ///
+    /// see [errors](https://docs.rs/akinator-rs/latest/akinator_rs/error/enum.Error.html) docs for more info
     pub async fn start(&mut self) -> Result<Option<String>> {
         self.ws_url = Some(self.find_server().await?);
         self.uri = format!("https://{}.akinator.com", self.language);
@@ -325,17 +344,17 @@ impl Akinator {
                 "callback",
                 format!("jQuery331023608747682107778_{}", self.timestamp),
             ),
-            ("urlApiWs", self.ws_url.as_ref().unwrap().to_string()),
+            ("urlApiWs", get_field!(self.ws_url)),
             ("partner", 1.to_string()),
             ("childMod", self.child_mode.to_string()),
             ("player", "website-desktop".to_string()),
-            ("uid_ext_session", self.uid.as_ref().unwrap().to_string()),
-            ("frontaddr", self.frontaddr.as_ref().unwrap().to_string()),
+            ("uid_ext_session", get_field!(self.uid)),
+            ("frontaddr", get_field!(self.frontaddr)),
             ("constraint", "ETAT<>'AV'".to_string()),
             ("soft_constraint", soft_constraint),
             (
                 "question_filter",
-                self.question_filter.as_ref().unwrap().to_string(),
+                get_field!(self.question_filter),
             ),
         ];
 
@@ -346,36 +365,40 @@ impl Akinator {
             .send()
             .await?;
 
-        let json_string = self.parse_response(response.text().await?);
+        let json_string = Self::parse_response(response.text().await?);
         let json: models::StartJson =
             serde_json::from_str(json_string.as_str())?;
 
         if json.completion.as_str() == "OK" {
-            self.update_start_info(json)?;
+            self.update_start_info(&json)?;
 
             Ok(self.current_question.clone())
         } else {
-            Err(self.handle_error_response(json.completion))
+            Err(Self::handle_error_response(json.completion))
         }
     }
 
     /// answers the akinator's current question which can be retrieved with [`Self.current_question`]
+    ///
+    /// # Errors
+    ///
+    /// see [errors](https://docs.rs/akinator-rs/latest/akinator_rs/error/enum.Error.html) docs for more info
     pub async fn answer(&mut self, answer: Answer) -> Result<Option<String>> {
         let params = [
             (
                 "callback",
                 format!("jQuery331023608747682107778_{}", self.timestamp),
             ),
-            ("urlApiWs", self.ws_url.as_ref().unwrap().to_string()),
+            ("urlApiWs", get_field!(self.ws_url)),
             ("childMod", self.child_mode.to_string()),
-            ("session", self.session.as_ref().unwrap().to_string()),
-            ("signature", self.signature.as_ref().unwrap().to_string()),
-            ("frontaddr", self.frontaddr.as_ref().unwrap().to_string()),
+            ("session", get_field!(self.session)),
+            ("signature", get_field!(self.signature)),
+            ("frontaddr", get_field!(self.frontaddr)),
             ("step", self.step.to_string()),
             ("answer", (answer as u8).to_string()),
             (
                 "question_filter",
-                self.question_filter.as_ref().unwrap().to_string(),
+                get_field!(self.question_filter),
             ),
         ];
 
@@ -388,7 +411,7 @@ impl Akinator {
             .text()
             .await?;
 
-        let json_string = self.parse_response(response);
+        let json_string = Self::parse_response(response);
         let json: models::MoveJson =
             serde_json::from_str(json_string.as_str())?;
 
@@ -397,12 +420,16 @@ impl Akinator {
 
             Ok(self.current_question.clone())
         } else {
-            Err(self.handle_error_response(json.completion))
+            Err(Self::handle_error_response(json.completion))
         }
     }
 
     /// tells the akinator to end the game and make it's guess
     /// and returns its best guess, which also can be retrieved with [`Self.first_guess`]
+    ///
+    /// # Errors
+    ///
+    /// see [errors](https://docs.rs/akinator-rs/latest/akinator_rs/error/enum.Error.html) docs for more info
     pub async fn win(&mut self) -> Result<Option<models::Guess>> {
         let params = [
             (
@@ -410,13 +437,13 @@ impl Akinator {
                 format!("jQuery331023608747682107778_{}", self.timestamp),
             ),
             ("childMod", self.child_mode.to_string()),
-            ("session", self.session.as_ref().unwrap().to_string()),
-            ("signature", self.signature.as_ref().unwrap().to_string()),
+            ("session", get_field!(self.session)),
+            ("signature", get_field!(self.signature)),
             ("step", self.step.to_string()),
         ];
 
         let response = self.http_client
-            .get(format!("{}/list", self.ws_url.as_ref().unwrap()))
+            .get(format!("{}/list", get_field!(self.ws_url)))
             .headers(HEADERS.clone())
             .query(&params)
             .send()
@@ -424,7 +451,7 @@ impl Akinator {
             .text()
             .await?;
 
-        let json_string = self.parse_response(response);
+        let json_string = Self::parse_response(response);
         let json: models::WinJson =
             serde_json::from_str(json_string.as_str())?;
 
@@ -444,12 +471,16 @@ impl Akinator {
 
             Ok(self.first_guess.clone())
         } else {
-            Err(self.handle_error_response(json.completion))
+            Err(Self::handle_error_response(json.completion))
         }
     }
 
     /// Goes back 1 question and returns the current question
     /// Returns an Err value with [`Error::CantGoBackAnyFurther`] if we are already on question 0
+    ///
+    /// # Errors
+    ///
+    /// see [errors](https://docs.rs/akinator-rs/latest/akinator_rs/error/enum.Error.html) docs for more info
     pub async fn back(&mut self) -> Result<Option<String>> {
         if self.step == 0 {
             return Err(Error::CantGoBackAnyFurther);
@@ -461,18 +492,18 @@ impl Akinator {
                 format!("jQuery331023608747682107778_{}", self.timestamp),
             ),
             ("childMod", self.child_mode.to_string()),
-            ("session", self.session.as_ref().unwrap().to_string()),
-            ("signature", self.signature.as_ref().unwrap().to_string()),
+            ("session", get_field!(self.session)),
+            ("signature", get_field!(self.signature)),
             ("step", self.step.to_string()),
             ("answer", "-1".to_string()),
             (
                 "question_filter",
-                self.question_filter.as_ref().unwrap().to_string()
+                get_field!(self.question_filter)
             ),
         ];
 
         let response = self.http_client
-            .get(format!("{}/cancel_answer", self.ws_url.as_ref().unwrap()))
+            .get(format!("{}/cancel_answer", get_field!(self.ws_url)))
             .headers(HEADERS.clone())
             .query(&params)
             .send()
@@ -480,7 +511,7 @@ impl Akinator {
             .text()
             .await?;
 
-        let json_string = self.parse_response(response);
+        let json_string = Self::parse_response(response);
         let json: models::MoveJson =
             serde_json::from_str(json_string.as_str())?;
 
@@ -489,7 +520,7 @@ impl Akinator {
 
             Ok(self.current_question.clone())
         } else {
-            Err(self.handle_error_response(json.completion))
+            Err(Self::handle_error_response(json.completion))
         }
     }
 }

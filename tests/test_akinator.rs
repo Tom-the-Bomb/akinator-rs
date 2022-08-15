@@ -67,14 +67,19 @@ mod tests {
 
         // akinator progression is at or over 80
         // we then tell the akinator to end the game and make its guess with `Akinator::win`
-        let guess = akinator.win().await?.unwrap();
-        println!("Game Over!\n");
-        // print its first guess's name
-        println!("NAME: {}", guess.name);
-        // print its first guess's description
-        println!("DESCRIPTION: {}", guess.description);
-        // print its first guess's image URL
-        println!("IMAGE URL: {}", guess.absolute_picture_path);
+        let first_guess = akinator.win().await?;
+
+        if let Some(guess) = first_guess {
+            println!("Game Over!\n");
+            // print its first guess's name
+            println!("NAME: {}", guess.name);
+            // print its first guess's description
+            println!("DESCRIPTION: {}", guess.description);
+            // print its first guess's image URL
+            println!("IMAGE URL: {}", guess.absolute_picture_path);
+        } else {
+            println!("no guess from the akinator");
+        }
 
         Ok(())
     }
