@@ -1,7 +1,7 @@
 [package]
 name = "akinator-rs"
 authors = ["Tom-the-Bomb"]
-description = "A simple wrapper around the undocumended Akinator API"
+description = "A simple wrapper around the undocumented Akinator API"
 version = "0.1.7"
 edition = "2021"
 license = "MIT"
