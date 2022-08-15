@@ -172,7 +172,7 @@ impl Akinator {
             .text()
             .await?;
 
-        let id = (self.theme.clone() as usize)
+        let id = (self.theme as usize)
             .to_string();
 
         if let Some(mat) = DATA_REGEX.find(html.as_str()) {
@@ -181,9 +181,8 @@ impl Akinator {
 
             let mat = json
                 .into_iter()
-                .filter(|entry| entry.subject_id == id)
-                .next()
-                .unwrap();
+                .find(|entry| entry.subject_id == id)
+                .ok_or(Error::NoDataFound)?;
 
             Ok(mat.url_ws)
         } else {
@@ -299,7 +298,7 @@ impl Akinator {
     /// Starts the akinator game and returns the first question
     pub async fn start(&mut self) -> Result<Option<String>> {
         self.ws_url = Some(self.find_server().await?);
-        self.uri = format!("https://{}.akinator.com", self.language.to_string());
+        self.uri = format!("https://{}.akinator.com", self.language);
 
         let (uid, frontaddr) = self.find_session_info().await?;
         self.uid = Some(uid);
