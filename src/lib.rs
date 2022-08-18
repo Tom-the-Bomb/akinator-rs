@@ -63,7 +63,7 @@ pub struct Akinator {
 
     /// The reqwest client used for this akinator session
     http_client: Client,
-    /// The timestamp the game session was started
+    /// The POSIX timestamp the game session was started
     /// used for keeping track of sessions
     timestamp: u64,
     /// the base URI to use when making requests
@@ -71,10 +71,13 @@ pub struct Akinator {
     uri: String,
     /// The unique identifier for the akinator session
     uid: Option<String>,
-    /// the websocket url used for the game
+    /// the websocket url (server) used for the game
     ws_url: Option<String>,
+    /// a (0 - 100) number representing the game's session
     session: Option<usize>,
+    /// An IP address encoded in Base64, for authentication purposes
     frontaddr: Option<String>,
+    /// A 9 - 10ish digit number that represents the game's signature
     signature: Option<usize>,
     question_filter: Option<String>,
 
