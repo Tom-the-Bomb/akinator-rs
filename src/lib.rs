@@ -21,6 +21,7 @@ pub mod models;
 pub mod error;
 pub mod enums;
 
+
 lazy_static! {
     static ref HEADERS: HeaderMap<HeaderValue> = {
         let mut headers = HeaderMap::new();
@@ -48,6 +49,7 @@ macro_rules! get_field {
         $field.as_ref().ok_or(Error::NoDataFound)?.to_string()
     }
 }
+
 
 /// Represents an akinator game
 #[derive(Debug, Clone)]
