@@ -10,11 +10,14 @@ use reqwest::{
         HeaderMap, HeaderName, HeaderValue, USER_AGENT,
     },
 };
-use crate::enums::{Theme, Answer, Language};
-use crate::error::{
-    Result,
-    Error,
-    UpdateInfoError,
+
+use crate::{
+    enums::{Theme, Answer, Language},
+    error::{
+        Result,
+        Error,
+        UpdateInfoError,
+    },
 };
 
 pub mod models;
@@ -45,8 +48,10 @@ lazy_static! {
 /// simple macro for retrieving an `Option` field's value
 /// to avoid repetition as this is frequently used
 macro_rules! get_field {
-    ( $field: expr ) => {
-        $field.as_ref().ok_or(Error::NoDataFound)?.to_string()
+    ( $field:expr ) => {
+        $field.as_ref()
+            .ok_or(Error::NoDataFound)?
+            .to_string()
     }
 }
 

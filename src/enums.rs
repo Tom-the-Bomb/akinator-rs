@@ -1,5 +1,7 @@
-use std::fmt;
-use std::str::FromStr;
+use std::{
+    fmt,
+    str::FromStr,
+};
 
 use crate::error::{Result, Error};
 
