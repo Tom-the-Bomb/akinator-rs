@@ -119,8 +119,8 @@ impl Akinator {
     #[must_use]
     pub fn new() -> Self {
         Self {
-            language: Language::English,
-            theme: Theme::Characters,
+            language: Default::default(),
+            theme: Default::default(),
             child_mode: false,
 
             http_client: Client::new(),

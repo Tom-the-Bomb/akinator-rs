@@ -114,7 +114,7 @@ fn theme_from_string(theme: String) -> Theme {
     match theme.trim().to_lowercase().as_str() {
         "a" | "animals" => Theme::Animals,
         "o" | "objects" => Theme::Objects,
-        _ => Theme::Characters,
+        _ => Default::default(),
     }
 }
 
