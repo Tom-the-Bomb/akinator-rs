@@ -119,8 +119,8 @@ impl Akinator {
     #[must_use]
     pub fn new() -> Self {
         Self {
-            language: Default::default(),
-            theme: Default::default(),
+            language: Language::default(),
+            theme: Theme::default(),
             child_mode: false,
 
             http_client: Client::new(),
@@ -255,7 +255,7 @@ impl Akinator {
     fn parse_response(html: String) -> String {
         lazy_static! {
             static ref RESPONSE_REGEX: Regex =
-                RegexBuilder::new(r"^jQuery\d+_\d+\((?P<json>\{.+\})\)$")
+                RegexBuilder::new(r"^jQuery\d+_\d+\(")
                     .case_insensitive(true)
                     .multi_line(true)
                     .build()
@@ -263,7 +263,9 @@ impl Akinator {
         }
 
         RESPONSE_REGEX
-            .replace(html.as_str(), "$json")
+            .replace(html.as_str(), "")
+            .strip_suffix(')')
+            .unwrap_or(html.as_str())
             .to_string()
     }
 
