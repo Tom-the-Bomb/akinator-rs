@@ -328,8 +328,8 @@ impl Akinator {
     ///
     /// see [errors](https://docs.rs/akinator-rs/latest/akinator_rs/error/enum.Error.html) docs for more info
     pub async fn start(&mut self) -> Result<Option<String>> {
-        self.ws_url = Some(self.find_server().await?);
         self.uri = format!("https://{}.akinator.com", self.language);
+        self.ws_url = Some(self.find_server().await?);
 
         let (uid, frontaddr) = self.find_session_info().await?;
         self.uid = Some(uid);
