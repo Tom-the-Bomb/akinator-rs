@@ -8,7 +8,7 @@ mod tests {
     /// a complete test for a full akinator game
     async fn test_akinator() -> Result<()> {
         // create a new akinator instance
-        let mut akinator = Akinator::new()
+        let mut akinator = Akinator::new()?
             .with_theme(Theme::Objects) // set theme to objects
             .with_child_mode(); // set child mode to true
 

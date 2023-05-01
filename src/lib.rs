@@ -107,23 +107,19 @@ pub struct Akinator {
     pub guesses: Vec<models::Guess>,
 }
 
-impl Default for Akinator {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl Akinator {
     /// Creates a new [`Akinator`] instance
     /// with fields filled with default values
     #[must_use]
-    pub fn new() -> Self {
-        Self {
+    pub fn new() -> Result<Self> {
+        Ok(Self {
             language: Language::default(),
             theme: Theme::default(),
             child_mode: false,
 
-            http_client: Client::new(),
+            http_client: Client::builder()
+                .danger_accept_invalid_certs(true)
+                .build()?,
             timestamp: 0,
             uri: "https://en.akinator.com".to_string(),
             uid: None,
@@ -139,7 +135,7 @@ impl Akinator {
 
             first_guess: None,
             guesses: Vec::new(),
-        }
+        })
     }
 
     /// builder method to set the [`Self.theme`] for the akinator game
