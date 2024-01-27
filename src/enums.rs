@@ -196,6 +196,7 @@ fn try_lang_from_string(lang: String) -> Result<Language> {
         "russian" | "ru" => Ok(Language::Russian),
         "turkish" | "tr" => Ok(Language::Turkish),
         "indonesian" | "id" => Ok(Language::Indonesian),
+        "german" | "de" => Ok(Language::German),
         _ => Err(Error::InvalidLanguage)
     }
 }
