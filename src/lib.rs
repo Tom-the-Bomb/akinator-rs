@@ -110,7 +110,9 @@ pub struct Akinator {
 impl Akinator {
     /// Creates a new [`Akinator`] instance
     /// with fields filled with default values
-    #[must_use]
+    ///
+    /// # Errors
+    /// If failed to create HTTP [`reqwest`] client
     pub fn new() -> Result<Self> {
         Ok(Self {
             language: Language::default(),
@@ -215,7 +217,7 @@ impl Akinator {
     async fn find_session_info(&self) -> Result<(String, String)> {
         lazy_static! {
             static ref VARS_REGEX: Regex =
-                RegexBuilder::new(r#"var uid_ext_session = '(.*)';\n.*var frontaddr = '(.*)';"#)
+                RegexBuilder::new(r"var uid_ext_session = '(.*)';\n.*var frontaddr = '(.*)';")
                     .case_insensitive(true)
                     .multi_line(true)
                     .build()
